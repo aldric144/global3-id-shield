@@ -10,7 +10,8 @@ from app.models.admissibility import (
     EvidenceAdmissibility,
     AdmissibilityGrade,
     IdentitySuitability,
-    SuitabilityLevel
+    SuitabilityLevel,
+    ExpertWitnessSummary
 )
 
 __all__ = [
@@ -25,5 +26,6 @@ __all__ = [
     "EvidenceAdmissibility",
     "AdmissibilityGrade",
     "IdentitySuitability",
-    "SuitabilityLevel"
+    "SuitabilityLevel",
+    "ExpertWitnessSummary"
 ]

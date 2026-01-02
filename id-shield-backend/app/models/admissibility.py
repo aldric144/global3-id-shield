@@ -108,3 +108,45 @@ class EvidenceAdmissibility(Base):
     # Relationships
     evidence = relationship("Evidence", backref="admissibility")
     computed_by_user = relationship("User", foreign_keys=[computed_by])
+
+
+class ExpertWitnessSummary(Base):
+    """Stores expert witness explanations for courtroom presentation.
+    
+    This provides court-ready, neutral explanations of forensic findings
+    that can survive cross-examination. Built on top of admissibility data.
+    """
+    __tablename__ = "expert_witness_summaries"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String(36), unique=True, default=lambda: str(uuid.uuid4()), index=True)
+    
+    evidence_id = Column(Integer, ForeignKey("evidence.id"), nullable=False, unique=True)
+    case_id = Column(Integer, ForeignKey("cases.id"), nullable=False)
+    
+    # Methods Summary: neutral explanation of what was analyzed and how
+    methods_summary = Column(Text, nullable=False)
+    
+    # Findings Summary: plain language translation of technical results
+    findings_summary = Column(Text, nullable=False)
+    
+    # Limitations Disclosure: pulled from Limitations Engine (never empty)
+    limitations_disclosure = Column(Text, nullable=False)
+    
+    # Confidence Alignment: ties viability score, grade, and confidence tier
+    confidence_alignment = Column(Text, nullable=False)
+    
+    # Cross-Examination Q&A: standardized Q&A block for courtroom challenges
+    # Stored as JSON array of {question, answer} objects
+    cross_examination_qa = Column(JSON, nullable=False)
+    
+    # Version tracking for reproducibility
+    version = Column(String(20), nullable=False, default="1.0.0")
+    
+    generated_at = Column(DateTime(timezone=True), server_default=func.now())
+    generated_by = Column(Integer, ForeignKey("users.id"))
+    
+    # Relationships
+    evidence = relationship("Evidence", backref="expert_witness_summary")
+    case = relationship("Case", backref="expert_witness_summaries")
+    generated_by_user = relationship("User", foreign_keys=[generated_by])
