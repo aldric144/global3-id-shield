@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 11%;
+    --foreground: 216 25% 93%;
+    --card: 222 40% 14%;
+    --card-foreground: 216 25% 93%;
+    --popover: 222 40% 14%;
+    --popover-foreground: 216 25% 93%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 20%;
+    --secondary-foreground: 216 25% 93%;
+    --muted: 217 33% 20%;
+    --muted-foreground: 216 18% 78%;
+    --accent: 217 33% 20%;
+    --accent-foreground: 216 25% 93%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 216 25% 93%;
+    --border: 217 25% 25%;
+    --input: 217 33% 20%;
+    --ring: 217 91% 60%;
+    --radius: 0.5rem;
+    
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 216 25% 93%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 217 33% 20%;
+    --sidebar-accent-foreground: 216 25% 93%;
+    --sidebar-border: 217 25% 25%;
+    --sidebar-ring: 217 91% 60%;
+    
+    --success: 142 76% 45%;
+    --success-foreground: 216 25% 93%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+    --info: 199 89% 48%;
+    --info-foreground: 222 47% 11%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+.confidence-high {
+  @apply bg-green-500/20 text-green-400 border-green-500/50;
+}
+
+.confidence-moderate {
+  @apply bg-yellow-500/20 text-yellow-400 border-yellow-500/50;
+}
+
+.confidence-limited {
+  @apply bg-orange-500/20 text-orange-400 border-orange-500/50;
+}
+
+.confidence-insufficient {
+  @apply bg-red-500/20 text-red-400 border-red-500/50;
+}
+
+.status-open {
+  @apply bg-blue-500/20 text-blue-400;
+}
+
+.status-in_progress {
+  @apply bg-yellow-500/20 text-yellow-400;
+}
+
+.status-pending_review {
+  @apply bg-purple-500/20 text-purple-400;
+}
+
+.status-closed {
+  @apply bg-muted/30 text-muted-foreground;
+}
+
+.status-archived {
+  @apply bg-muted/20 text-muted-foreground;
+}
+
+.priority-critical {
+  @apply bg-red-500/20 text-red-400;
+}
+
+.priority-high {
+  @apply bg-orange-500/20 text-orange-400;
+}
+
+.priority-medium {
+  @apply bg-yellow-500/20 text-yellow-400;
+}
+
+.priority-low {
+  @apply bg-green-500/20 text-green-400;
+}
+
