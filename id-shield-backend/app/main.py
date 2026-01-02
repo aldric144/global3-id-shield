@@ -10,7 +10,8 @@ from app.routers import (
     evidence_router,
     analysis_router,
     reports_router,
-    bootstrap_router
+    bootstrap_router,
+    admissibility_router
 )
 
 
@@ -43,6 +44,7 @@ app.include_router(evidence_router)
 app.include_router(analysis_router)
 app.include_router(reports_router)
 app.include_router(bootstrap_router)
+app.include_router(admissibility_router)
 
 
 @app.get("/healthz")

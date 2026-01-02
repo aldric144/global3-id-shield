@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode } from 'react';
-import type { User, Case, Evidence, AnalysisResult, Report, Agency } from '../types';
+import type { User, Case, Evidence, AnalysisResult, Report, Agency, EvidenceAdmissibility } from '../types';
 
 export const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
 
@@ -303,6 +303,86 @@ export const DEMO_REPORTS: Report[] = [
   },
 ];
 
+export const DEMO_ADMISSIBILITY: Record<number, EvidenceAdmissibility> = {
+  1: {
+    evidence_id: 1,
+    evidence_uuid: 'evidence-uuid-001',
+    grade: 'A',
+    grade_label: 'High reliability',
+    viability_score: 87,
+    suitability: {
+      identity_attribution: 'allowed',
+      manipulation_detection: 'strong',
+      timeline_context: 'strong',
+      audio_content: 'moderate',
+    },
+    limitations: [
+      {
+        code: 'MODERATE_BLUR',
+        what: 'Video exhibits moderate motion blur in some frames',
+        why: 'Camera movement during recording caused intermittent blur',
+        impact: 'Some fine detail analysis may be affected in specific frames',
+        severity: 'medium',
+      },
+    ],
+    limitations_count: 1,
+    thresholds_version: '1.0.0',
+    computed_at: '2024-11-16T09:40:00Z',
+    computed_by: 1,
+  },
+  2: {
+    evidence_id: 2,
+    evidence_uuid: 'evidence-uuid-002',
+    grade: 'A',
+    grade_label: 'High reliability',
+    viability_score: 92,
+    suitability: {
+      identity_attribution: 'allowed',
+      manipulation_detection: 'strong',
+      timeline_context: 'strong',
+      audio_content: 'n/a',
+    },
+    limitations: [],
+    limitations_count: 0,
+    thresholds_version: '1.0.0',
+    computed_at: '2024-11-16T10:10:00Z',
+    computed_by: 1,
+  },
+  3: {
+    evidence_id: 3,
+    evidence_uuid: 'evidence-uuid-003',
+    grade: 'B',
+    grade_label: 'Moderate reliability',
+    viability_score: 78,
+    suitability: {
+      identity_attribution: 'not_allowed',
+      manipulation_detection: 'moderate',
+      timeline_context: 'moderate',
+      audio_content: 'limited',
+    },
+    limitations: [
+      {
+        code: 'LOW_SNR',
+        what: 'Audio signal-to-noise ratio is below optimal threshold',
+        why: 'Background noise detected in recording environment',
+        impact: 'Audio content interpretation reliability is reduced',
+        severity: 'high',
+      },
+      {
+        code: 'LOW_FACE_RESOLUTION',
+        what: 'Identity attribution was not performed',
+        why: 'Audio-only evidence does not contain visual identity data',
+        impact: 'Cannot assess identity consistency for this evidence',
+        severity: 'high',
+      },
+    ],
+    limitations_count: 2,
+    thresholds_version: '1.0.0',
+    computed_at: '2024-11-16T12:15:00Z',
+    computed_by: 1,
+  },
+};
+
 interface DemoContextType {
   isDemoMode: boolean;
   isReadOnly: boolean;
@@ -312,6 +392,7 @@ interface DemoContextType {
   demoEvidence: Evidence[];
   demoAnalysisResults: AnalysisResult[];
   demoReports: Report[];
+  demoAdmissibility: Record<number, EvidenceAdmissibility>;
   showReadOnlyWarning: () => void;
 }
 
@@ -323,19 +404,20 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <DemoContext.Provider
-      value={{
-        isDemoMode: DEMO_MODE,
-        isReadOnly: DEMO_MODE,
-        demoUser: DEMO_USER,
-        demoAgency: DEMO_AGENCY,
-        demoCases: DEMO_CASES,
-        demoEvidence: DEMO_EVIDENCE,
-        demoAnalysisResults: DEMO_ANALYSIS_RESULTS,
-        demoReports: DEMO_REPORTS,
-        showReadOnlyWarning,
-      }}
-    >
+        <DemoContext.Provider
+          value={{
+            isDemoMode: DEMO_MODE,
+            isReadOnly: DEMO_MODE,
+            demoUser: DEMO_USER,
+            demoAgency: DEMO_AGENCY,
+            demoCases: DEMO_CASES,
+            demoEvidence: DEMO_EVIDENCE,
+            demoAnalysisResults: DEMO_ANALYSIS_RESULTS,
+            demoReports: DEMO_REPORTS,
+            demoAdmissibility: DEMO_ADMISSIBILITY,
+            showReadOnlyWarning,
+          }}
+        >
       {children}
     </DemoContext.Provider>
   );

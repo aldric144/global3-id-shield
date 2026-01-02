@@ -5,6 +5,13 @@ from app.models.evidence import Evidence
 from app.models.analysis import AnalysisResult
 from app.models.report import Report
 from app.models.audit import AuditLog
+from app.models.admissibility import (
+    EvidenceQualityMetrics,
+    EvidenceAdmissibility,
+    AdmissibilityGrade,
+    IdentitySuitability,
+    SuitabilityLevel
+)
 
 __all__ = [
     "User",
@@ -13,5 +20,10 @@ __all__ = [
     "Evidence",
     "AnalysisResult",
     "Report",
-    "AuditLog"
+    "AuditLog",
+    "EvidenceQualityMetrics",
+    "EvidenceAdmissibility",
+    "AdmissibilityGrade",
+    "IdentitySuitability",
+    "SuitabilityLevel"
 ]

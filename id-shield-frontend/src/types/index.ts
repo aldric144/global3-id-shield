@@ -135,3 +135,32 @@ export interface EvidenceListResponse {
   evidence: Evidence[];
   total: number;
 }
+
+export interface Limitation {
+  code: string;
+  what: string;
+  why: string;
+  impact: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+}
+
+export interface SuitabilityTags {
+  identity_attribution: 'allowed' | 'not_allowed';
+  manipulation_detection: 'strong' | 'moderate' | 'limited';
+  timeline_context: 'strong' | 'moderate' | 'limited';
+  audio_content: 'strong' | 'moderate' | 'limited' | 'not_reliable' | 'n/a';
+}
+
+export interface EvidenceAdmissibility {
+  evidence_id: number;
+  evidence_uuid: string;
+  grade: 'A' | 'B' | 'C' | 'D';
+  grade_label: string;
+  viability_score: number;
+  suitability: SuitabilityTags;
+  limitations: Limitation[];
+  limitations_count: number;
+  thresholds_version: string;
+  computed_at: string;
+  computed_by?: number;
+}

@@ -86,7 +86,7 @@ export function CaseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isDemoMode } = useAuth();
-  const { demoCases, demoEvidence, demoAnalysisResults, demoReports, showReadOnlyWarning } = useDemo();
+  const { demoCases, demoEvidence, demoAnalysisResults, demoReports, demoAdmissibility, showReadOnlyWarning } = useDemo();
   
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [evidence, setEvidence] = useState<Evidence[]>([]);
@@ -741,56 +741,191 @@ export function CaseDetailPage() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={!!selectedEvidence} onOpenChange={() => setSelectedEvidence(null)}>
-        <DialogContent className="bg-card border-border max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Evidence Details</DialogTitle>
-            <DialogDescription>
-              {selectedEvidence?.evidence_number}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedEvidence && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Original Filename</p>
-                  <p className="font-medium">{selectedEvidence.original_filename}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Type</p>
-                  <p className="font-medium capitalize">{selectedEvidence.evidence_type}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">File Size</p>
-                  <p className="font-medium">{(selectedEvidence.file_size / 1024 / 1024).toFixed(2)} MB</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">MIME Type</p>
-                  <p className="font-medium">{selectedEvidence.mime_type}</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <p className="text-muted-foreground text-sm">SHA-256 Hash</p>
-                <code className="block p-2 rounded bg-muted text-xs break-all">
-                  {selectedEvidence.sha256_hash}
-                </code>
-              </div>
-              <div className="space-y-2">
-                <p className="text-muted-foreground text-sm">MD5 Hash</p>
-                <code className="block p-2 rounded bg-muted text-xs break-all">
-                  {selectedEvidence.md5_hash}
-                </code>
-              </div>
-              {selectedEvidence.description && (
-                <div>
-                  <p className="text-muted-foreground text-sm">Description</p>
-                  <p className="text-sm">{selectedEvidence.description}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            <Dialog open={!!selectedEvidence} onOpenChange={() => setSelectedEvidence(null)}>
+              <DialogContent className="bg-card border-border max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Evidence Details</DialogTitle>
+                  <DialogDescription>
+                    {selectedEvidence?.evidence_number}
+                  </DialogDescription>
+                </DialogHeader>
+                {selectedEvidence && (
+                  <div className="space-y-4">
+                    {(() => {
+                      const admissibility = isDemoMode ? demoAdmissibility[selectedEvidence.id] : null;
+                      const identityDisabled = admissibility?.suitability?.identity_attribution === 'not_allowed';
+                      const audioDisabled = admissibility?.suitability?.audio_content === 'not_reliable';
+                
+                      return admissibility ? (
+                        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold text-foreground flex items-center gap-2">
+                              <Shield className="w-4 h-4 text-primary" />
+                              Admissibility & Limitations
+                            </h4>
+                            <div className="flex items-center gap-2">
+                              <Badge className={
+                                admissibility.grade === 'A' ? 'bg-green-500/20 text-green-400 border-green-500/50' :
+                                admissibility.grade === 'B' ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' :
+                                admissibility.grade === 'C' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' :
+                                'bg-red-500/20 text-red-400 border-red-500/50'
+                              }>
+                                Grade {admissibility.grade}
+                              </Badge>
+                              <span className="text-sm text-muted-foreground">{admissibility.grade_label}</span>
+                            </div>
+                          </div>
+                    
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="text-muted-foreground mb-1">Viability Score</p>
+                              <div className="flex items-center gap-2">
+                                <Progress value={admissibility.viability_score} className="h-2 flex-1" />
+                                <span className="font-medium text-foreground">{admissibility.viability_score}/100</span>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground mb-1">Thresholds Version</p>
+                              <p className="font-medium text-foreground">{admissibility.thresholds_version}</p>
+                            </div>
+                          </div>
+                    
+                          <div className="space-y-2">
+                            <p className="text-muted-foreground text-sm font-medium">Suitability Tags</p>
+                            <div className="flex flex-wrap gap-2">
+                              <Badge variant="outline" className={
+                                admissibility.suitability.identity_attribution === 'allowed' 
+                                  ? 'text-green-400 border-green-500/50' 
+                                  : 'text-red-400 border-red-500/50'
+                              }>
+                                Identity: {admissibility.suitability.identity_attribution.replace('_', ' ').toUpperCase()}
+                              </Badge>
+                              <Badge variant="outline" className={
+                                admissibility.suitability.manipulation_detection === 'strong' ? 'text-green-400 border-green-500/50' :
+                                admissibility.suitability.manipulation_detection === 'moderate' ? 'text-yellow-400 border-yellow-500/50' :
+                                'text-orange-400 border-orange-500/50'
+                              }>
+                                Manipulation: {admissibility.suitability.manipulation_detection.toUpperCase()}
+                              </Badge>
+                              <Badge variant="outline" className={
+                                admissibility.suitability.timeline_context === 'strong' ? 'text-green-400 border-green-500/50' :
+                                admissibility.suitability.timeline_context === 'moderate' ? 'text-yellow-400 border-yellow-500/50' :
+                                'text-orange-400 border-orange-500/50'
+                              }>
+                                Timeline: {admissibility.suitability.timeline_context.toUpperCase()}
+                              </Badge>
+                              {admissibility.suitability.audio_content !== 'n/a' && (
+                                <Badge variant="outline" className={
+                                  admissibility.suitability.audio_content === 'strong' ? 'text-green-400 border-green-500/50' :
+                                  admissibility.suitability.audio_content === 'moderate' ? 'text-yellow-400 border-yellow-500/50' :
+                                  admissibility.suitability.audio_content === 'limited' ? 'text-orange-400 border-orange-500/50' :
+                                  'text-red-400 border-red-500/50'
+                                }>
+                                  Audio: {admissibility.suitability.audio_content.replace('_', ' ').toUpperCase()}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                    
+                          {identityDisabled && (
+                            <Alert className="border-red-500/50 bg-red-500/10">
+                              <AlertTriangle className="w-4 h-4 text-red-400" />
+                              <AlertDescription className="text-red-400">
+                                Identity attribution disabled: evidence does not meet minimum quality thresholds.
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                    
+                          {audioDisabled && (
+                            <Alert className="border-orange-500/50 bg-orange-500/10">
+                              <AlertTriangle className="w-4 h-4 text-orange-400" />
+                              <AlertDescription className="text-orange-400">
+                                Audio interpretation disabled: signal-to-noise ratio below reliability threshold.
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                    
+                          {admissibility.limitations.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-muted-foreground text-sm font-medium">
+                                Limitations ({admissibility.limitations_count})
+                              </p>
+                              <div className="space-y-2">
+                                {admissibility.limitations.slice(0, 3).map((lim, idx) => (
+                                  <div key={idx} className="p-2 rounded bg-muted/50 border border-border text-sm">
+                                    <div className="flex items-start gap-2">
+                                      <Badge variant="outline" className={
+                                        lim.severity === 'critical' ? 'text-red-400 border-red-500/50' :
+                                        lim.severity === 'high' ? 'text-orange-400 border-orange-500/50' :
+                                        lim.severity === 'medium' ? 'text-yellow-400 border-yellow-500/50' :
+                                        'text-blue-400 border-blue-500/50'
+                                      }>
+                                        {lim.severity.toUpperCase()}
+                                      </Badge>
+                                      <div className="flex-1">
+                                        <p className="font-medium text-foreground">{lim.what}</p>
+                                        <p className="text-muted-foreground text-xs mt-1">{lim.why}</p>
+                                        <p className="text-muted-foreground text-xs italic mt-1">Impact: {lim.impact}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                                {admissibility.limitations.length > 3 && (
+                                  <p className="text-muted-foreground text-xs">
+                                    ... and {admissibility.limitations.length - 3} more limitations
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                    
+                          <p className="text-xs text-muted-foreground italic">
+                            These grades reflect technical reliability constraints and do not determine legal admissibility.
+                          </p>
+                        </div>
+                      ) : null;
+                    })()}
+              
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Original Filename</p>
+                        <p className="font-medium">{selectedEvidence.original_filename}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Type</p>
+                        <p className="font-medium capitalize">{selectedEvidence.evidence_type}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">File Size</p>
+                        <p className="font-medium">{(selectedEvidence.file_size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">MIME Type</p>
+                        <p className="font-medium">{selectedEvidence.mime_type}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-muted-foreground text-sm">SHA-256 Hash</p>
+                      <code className="block p-2 rounded bg-muted text-xs break-all">
+                        {selectedEvidence.sha256_hash}
+                      </code>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-muted-foreground text-sm">MD5 Hash</p>
+                      <code className="block p-2 rounded bg-muted text-xs break-all">
+                        {selectedEvidence.md5_hash}
+                      </code>
+                    </div>
+                    {selectedEvidence.description && (
+                      <div>
+                        <p className="text-muted-foreground text-sm">Description</p>
+                        <p className="text-sm">{selectedEvidence.description}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
     </div>
   );
 }

@@ -16,11 +16,13 @@ from app.models.report import Report, ReportType, ReportStatus
 from app.models.case import Case
 from app.models.evidence import Evidence
 from app.models.analysis import AnalysisResult, AnalysisStatus, ConfidenceTier
+from app.models.admissibility import EvidenceQualityMetrics, EvidenceAdmissibility
 from app.models.user import User
 from app.utils.hashing import compute_string_hash
 from app.utils.audit import create_audit_log
 from app.models.audit import AuditAction
 from app.config import settings
+from app.schemas.admissibility import get_grade_label
 
 
 class ReportService:
@@ -81,6 +83,24 @@ class ReportService:
             )
             analysis_results.extend(ar_result.scalars().all())
         
+        admissibility_data = {}
+        for ev in evidence_items:
+            metrics_result = await db.execute(
+                select(EvidenceQualityMetrics).where(EvidenceQualityMetrics.evidence_id == ev.id)
+            )
+            metrics = metrics_result.scalar_one_or_none()
+            
+            admiss_result = await db.execute(
+                select(EvidenceAdmissibility).where(EvidenceAdmissibility.evidence_id == ev.id)
+            )
+            admiss = admiss_result.scalar_one_or_none()
+            
+            if metrics and admiss:
+                admissibility_data[ev.id] = {
+                    "metrics": metrics,
+                    "admissibility": admiss
+                }
+        
         existing_count = await db.execute(
             select(Report).where(Report.case_id == case_id)
         )
@@ -120,7 +140,7 @@ class ReportService:
         
         try:
             file_path = await ReportService._generate_pdf(
-                report, case, evidence_items, analysis_results, user
+                report, case, evidence_items, analysis_results, user, admissibility_data
             )
             
             with open(file_path, 'rb') as f:
@@ -154,9 +174,12 @@ class ReportService:
         case: Case,
         evidence_items: List[Evidence],
         analysis_results: List[AnalysisResult],
-        user: User
+        user: User,
+        admissibility_data: dict = None
     ) -> str:
         """Generate the actual PDF document."""
+        if admissibility_data is None:
+            admissibility_data = {}
         
         os.makedirs(settings.reports_dir, exist_ok=True)
         filename = f"{report.report_number}.pdf"
@@ -276,6 +299,72 @@ class ReportService:
             ]))
             story.append(ev_table)
             story.append(Spacer(1, 10))
+        
+        if admissibility_data:
+            story.append(PageBreak())
+            story.append(Paragraph("EVIDENCE ADMISSIBILITY & LIMITATIONS", heading_style))
+            
+            admiss_disclaimer = (
+                "These grades reflect technical reliability constraints of the submitted media "
+                "and do not determine legal admissibility."
+            )
+            story.append(Paragraph(f"<i>{admiss_disclaimer}</i>", disclaimer_style))
+            story.append(Spacer(1, 10))
+            
+            for ev in evidence_items:
+                if ev.id not in admissibility_data:
+                    continue
+                
+                data = admissibility_data[ev.id]
+                metrics = data["metrics"]
+                admiss = data["admissibility"]
+                
+                story.append(Paragraph(f"Evidence: {ev.evidence_number}", subheading_style))
+                
+                grade_label = get_grade_label(admiss.grade)
+                admiss_info = [
+                    ["Admissibility Grade:", f"{admiss.grade} ({grade_label})"],
+                    ["Viability Score:", f"{metrics.viability_score}/100"],
+                    ["SHA-256 Hash:", ev.sha256_hash[:32] + "..."],
+                    ["Evidence Type:", ev.evidence_type.value.upper()],
+                ]
+                
+                admiss_table = Table(admiss_info, colWidths=[1.5*inch, 5*inch])
+                admiss_table.setStyle(TableStyle([
+                    ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 9),
+                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                ]))
+                story.append(admiss_table)
+                story.append(Spacer(1, 5))
+                
+                suitability = admiss.suitability_json
+                story.append(Paragraph("<b>Suitability Tags:</b>", body_style))
+                suitability_items = [
+                    f"Identity Attribution: {suitability.get('identity_attribution', 'N/A').upper()}",
+                    f"Manipulation Detection: {suitability.get('manipulation_detection', 'N/A').upper()}",
+                    f"Timeline/Context: {suitability.get('timeline_context', 'N/A').upper()}",
+                ]
+                audio_suit = suitability.get('audio_content', 'n/a')
+                if audio_suit != 'n/a':
+                    suitability_items.append(f"Audio Content: {audio_suit.upper()}")
+                
+                for item in suitability_items:
+                    story.append(Paragraph(f"  • {item}", body_style))
+                
+                limitations = admiss.limitations_json
+                if limitations:
+                    story.append(Spacer(1, 5))
+                    story.append(Paragraph("<b>Limitations:</b>", body_style))
+                    for lim in limitations[:5]:
+                        lim_text = f"{lim.get('what', '')} - {lim.get('why', '')}"
+                        severity = lim.get('severity', 'medium').upper()
+                        story.append(Paragraph(f"  • [{severity}] {lim_text}", body_style))
+                    if len(limitations) > 5:
+                        story.append(Paragraph(f"  ... and {len(limitations) - 5} more limitations", body_style))
+                
+                story.append(Spacer(1, 15))
         
         story.append(PageBreak())
         

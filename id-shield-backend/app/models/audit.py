@@ -36,6 +36,8 @@ class AuditAction(str, enum.Enum):
     
     PERMISSION_CHANGE = "permission_change"
     SYSTEM_CONFIG = "system_config"
+    
+    EVIDENCE_ADMISSIBILITY_COMPUTED = "evidence_admissibility_computed"
 
 
 class AuditLog(Base):
