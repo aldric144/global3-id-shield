@@ -38,6 +38,7 @@ class AuditAction(str, enum.Enum):
     SYSTEM_CONFIG = "system_config"
     
     EVIDENCE_ADMISSIBILITY_COMPUTED = "evidence_admissibility_computed"
+    EXPERT_WITNESS_SUMMARY_GENERATED = "expert_witness_summary_generated"
 
 
 class AuditLog(Base):
